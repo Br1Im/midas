@@ -1,0 +1,49 @@
+version: '3.8'
+
+services:
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: midas-backend
+    ports:
+      - "8001:8001"
+    volumes:
+      - ./backend:/app
+      - backend-data:/app/data
+    environment:
+      - DATABASE_URL=sqlite:///./data/midas.db
+      - CORS_ORIGINS=["http://localhost:3001","http://localhost:3000"]
+    networks:
+      - midas-network
+    restart: unless-stopped
+    # Для Chrome в Docker
+    shm_size: 2gb
+    cap_add:
+      - SYS_ADMIN
+
+  frontend:
+    build:
+      context: ./next
+      dockerfile: Dockerfile
+    container_name: midas-frontend
+    ports:
+      - "3001:3001"
+    volumes:
+      - ./next:/app
+      - /app/node_modules
+      - /app/.next
+    environment:
+      - NEXT_PUBLIC_API_URL=http://localhost:8001
+    networks:
+      - midas-network
+    depends_on:
+      - backend
+    restart: unless-stopped
+
+volumes:
+  backend-data:
+
+networks:
+  midas-network:
+    driver: bridge
